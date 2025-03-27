@@ -32,71 +32,9 @@ See [Beyond Robotix Can Node](https://www.beyondrobotix.com/)
 
 We've got some handy docs for the node hardware and some more software explaination and examples here [CAN node gitbook](https://beyond-robotix.gitbook.io/docs/can-node-system)
 
-
-To get started:
-1. Install VScode
-2. Install the PlatformIO extension
-3. Clone/Download this repository
-* if you clone the repo, then ensure to 
-```
-git clone --recurse-submodules https://github.com/BeyondRobotix/Arduino-DroneCAN.git
-```
-4. Plug in the CAN node via USB or STLINK
-5. Click the upload button!
-6. The CAN Node will report a simulated battery CAN message to any Ardupilot/PX4/DroneCAN usb !
-7. Create your custom CAN application using Arduino libraries.. 
-
 ## Code Usage
 
-Minimal boilerplate code needed, you can add you sensor messages easily!
-
-See src/main.cpp for a full example, which reads in the built in STM32 MCU temperature sensor and writes this into a Battery messsage. It also reads in magnetometer measurements on the bus and prints them to serial.
-
-```cpp
-#include <Arduino.h>
-#include <dronecan.h>
-
-DroneCAN dronecan;
-
-/*
-This function is called when we receive a CAN message, and it's accepted by the shouldAcceptTransfer function.
-We need to do boiler plate code in here to handle parameter updates and so on, but you can also write code to interact with sent messages here.
-*/
-static void onTransferReceived(CanardInstance *ins, CanardRxTransfer *transfer)
-{
-
-    DroneCANonTransferReceived(dronecan, ins, transfer);
-}
-
-/*
-For this function, we have to sign the signaure of any messages we want to recieve. We do the boilerplate handling for parameters etc. See main.cpp for an example on how to handle this.
- */
-static bool shouldAcceptTransfer(const CanardInstance *ins,
-                                 uint64_t *out_data_type_signature,
-                                 uint16_t data_type_id,
-                                 CanardTransferType transfer_type,
-                                 uint8_t source_node_id)
-
-{
-    
-    return false || DroneCANshoudlAcceptTransfer(ins, out_data_type_signature, data_type_id, transfer_type, source_node_id);
-}
-
-
-void setup()
-{
-    // Do your usual Arduino sensor initialisation here
-    
-    dronecan.init(onTransferReceived, shouldAcceptTransfer);
-}
-
-void loop()
-{
-    // Read your sensor data, and compose dronecan messages here
-
-    dronecan.cycle();
-}
-```
+See [Beyond Robotix Gitbooks ArduinoCAN documentation](https://beyond-robotix.gitbook.io/docs/can-node-system/arduino-dronecan for more information!)
 
 ## Support
 
