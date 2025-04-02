@@ -27,7 +27,9 @@ API changes can happen at any time in master. See the releases page to download 
 This repository is plug and play with the Beyond Robotix CAN node series!
 
 See [Beyond Robotix Can Node](https://www.beyondrobotix.com/)
+
 <img src="./assets/BRlogo.png" width="50%">
+
 <img src="./assets/node-and-carrier.png" width="80%">
 
 We've got some handy docs for the node hardware and some more software explaination and examples here [CAN node gitbook](https://beyond-robotix.gitbook.io/docs/can-node-system)
