@@ -1,3 +1,7 @@
+
+extern "C" {
+  #include "stm32l4xx.h"  // or stm32l431xx.h if needed
+}
 #include <Arduino.h>
 #include <dronecan.h>
 #include <IWatchdog.h>
@@ -66,6 +70,7 @@ static bool shouldAcceptTransfer(const CanardInstance *ins,
 
 void setup()
 {
+    SCB->VTOR = 0x0800A000;
     Serial.begin(115200);
     Serial.println("Node Start");
 
