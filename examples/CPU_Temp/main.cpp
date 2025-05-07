@@ -1,35 +1,60 @@
-/*
-* This is an example app using the INA libary from https://github.com/RobTillaart/INA239
-* You'll need to download the library
-* this code is untested, and is just for illustration on how you could use the library. Hopefully I can test it with the INA soon : )
-*/
-
 
 #include <Arduino.h>
 #include <dronecan.h>
 #include <IWatchdog.h>
 #include <app.h>
 #include <vector>
-#include "INA239.h"
-
-INA239 INA(5, &SPI);
-
 
 std::vector<DroneCAN::parameter> custom_parameters = {
     { "NODEID", UAVCAN_PROTOCOL_PARAM_VALUE_INTEGER_VALUE, 127,  0, 127 },
     { "PARM_1", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
     { "PARM_2", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
+    { "PARM_3", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
+    { "PARM_4", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
+    { "PARM_5", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
+    { "PARM_6", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
+    { "PARM_7", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
 };
 
 DroneCAN dronecan;
 
 uint32_t looptime = 0;
 
+/*
+This function is called when we receive a CAN message, and it's accepted by the shouldAcceptTransfer function.
+We need to do boiler plate code in here to handle parameter updates and so on, but you can also write code to interact with sent messages here.
+*/
 static void onTransferReceived(CanardInstance *ins, CanardRxTransfer *transfer)
 {
+
+    // switch on data type ID to pass to the right handler function
+    // if (transfer->transfer_type == CanardTransferTypeRequest)
+    // check if we want to handle a specific service request
+    switch (transfer->data_type_id)
+    {
+
+    case UAVCAN_EQUIPMENT_AHRS_MAGNETICFIELDSTRENGTH_ID:
+    {
+        uavcan_equipment_ahrs_MagneticFieldStrength pkt{};
+        uavcan_equipment_ahrs_MagneticFieldStrength_decode(transfer, &pkt);
+        // Serial.print(pkt.magnetic_field_ga[0], 4);
+        // Serial.print(" ");
+        // Serial.print(pkt.magnetic_field_ga[1], 4);
+        // Serial.print(" ");
+        // Serial.print(pkt.magnetic_field_ga[2], 4);
+        // Serial.print(" ");
+        // Serial.println();
+        break;
+    }
+    }
+
     DroneCANonTransferReceived(dronecan, ins, transfer);
 }
 
+/*
+For this function, we need to make sure any messages we want to receive follow the following format with
+UAVCAN_EQUIPMENT_AHRS_MAGNETICFIELDSTRENGTH_ID as an example
+ */
 static bool shouldAcceptTransfer(const CanardInstance *ins,
                                  uint64_t *out_data_type_signature,
                                  uint16_t data_type_id,
@@ -37,6 +62,19 @@ static bool shouldAcceptTransfer(const CanardInstance *ins,
                                  uint8_t source_node_id)
 
 {
+    if (transfer_type == CanardTransferTypeBroadcast)
+    {
+        // Check if we want to handle a specific broadcast packet
+        switch (data_type_id)
+        {
+        case UAVCAN_EQUIPMENT_AHRS_MAGNETICFIELDSTRENGTH_ID:
+        {
+            *out_data_type_signature = UAVCAN_EQUIPMENT_AHRS_MAGNETICFIELDSTRENGTH_SIGNATURE;
+            return true;
+        }
+        }
+    }
+
     return false || DroneCANshoudlAcceptTransfer(ins, out_data_type_signature, data_type_id, transfer_type, source_node_id);
 }
 
@@ -49,17 +87,6 @@ void setup()
     dronecan.init(onTransferReceived, shouldAcceptTransfer, custom_parameters);
     IWatchdog.begin(2000000); // if the loop takes longer than 2 seconds, reset the system
 
-    SPI.begin();
-
-    if (!INA.begin() )
-    {
-        Serial.println("Could not connect. Fix and Reboot");
-        while(1);
-    }
-
-    // set your shunt resistance here
-    INA.setMaxCurrentShunt(10, 0.015);
-
     while (true)
     {
         const uint32_t now = millis();
@@ -69,11 +96,14 @@ void setup()
         {
             looptime = millis();
 
+            // collect MCU core temperature data
+            int32_t vref = __LL_ADC_CALC_VREFANALOG_VOLTAGE(analogRead(AVREF), LL_ADC_RESOLUTION_12B);
+            int32_t cpu_temp = __LL_ADC_CALC_TEMPERATURE(vref, analogRead(ATEMP), LL_ADC_RESOLUTION_12B);
+
             // construct dronecan packet
             uavcan_equipment_power_BatteryInfo pkt{};
-            pkt.voltage = INA.getBusVoltage();
-            pkt.current = INA.getMilliAmpere()/1000;
-            pkt.temperature = INA.getTemperature();
+            pkt.voltage = now / 10000;
+            pkt.temperature = cpu_temp;
 
             // boilerplate to send a message
             uint8_t buffer[UAVCAN_EQUIPMENT_POWER_BATTERYINFO_MAX_SIZE];
