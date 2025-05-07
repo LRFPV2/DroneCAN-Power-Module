@@ -11,7 +11,7 @@ std::vector<DroneCAN::parameter> custom_parameters = {
     { "PARM_2", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
     { "PARM_3", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
     { "PARM_4", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
-    { "PARM_5", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 5100.0f },
+    { "PARM_5", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
     { "PARM_6", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
     { "PARM_7", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
 };
@@ -80,14 +80,9 @@ static bool shouldAcceptTransfer(const CanardInstance *ins,
 
 void setup()
 {
-    // app_setup(); // needed for coming from a bootloader, needs to be first in setup
-
+    app_setup(); // needed for coming from a bootloader, needs to be first in setup
     Serial.begin(115200);
-
-    dronecan.set_parameters(custom_parameters);
-
-    dronecan.init(onTransferReceived, shouldAcceptTransfer);
-
+    dronecan.init(onTransferReceived, shouldAcceptTransfer, custom_parameters);
     IWatchdog.begin(2000000); // if the loop takes longer than 2 seconds, reset the system
 
     while (true)
