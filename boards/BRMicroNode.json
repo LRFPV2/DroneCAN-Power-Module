@@ -19,12 +19,7 @@
     "svd_path": "STM32L4x2.svd"
   },
   "frameworks": [
-    "arduino",
-    "cmsis",
-    "mbed",
-    "stm32cube",
-    "libopencm3",
-    "zephyr"
+    "arduino"
   ],
   "name": "Beyond Robotix Micro Node",
   "upload": {
