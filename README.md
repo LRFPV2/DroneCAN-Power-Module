@@ -8,7 +8,7 @@ This isn't intended to be used in the same way as AP_Periph, which supports tons
 
 ## Features
 
-API changes can happen at any time in master. See the releases page to download a specific verison for your project. Once we've solved firmware updates over CAN we'll release a V1 version!
+API changes can happen at any time in master. See the releases page to download a specific verison for your project.
 
 - Send DroneCAN messages ✅
 - Receive DroneCAN messages ✅
