@@ -4,7 +4,9 @@ This repository allows easy integration of sensors to be used with Ardupilot and
 
 By using the Arduino core and PlatformIO with pre-configured board setups, you can start developing instantly.
 
-This isn't intended to be used in the same way as AP_Periph, which supports tons of sensors all at once and is highly adaptable without writing code. This is intended for writing a DroneCAN interface for any sensor or system, without having to deal with a large code base and lots of boilerplate.
+This isn't intended to be used in the same way as AP_Periph, which supports a bunch of Ardupilot sensors all at once and is adaptable without writing code. This is intended for writing a DroneCAN interface for any sensor or system, without having to deal with a large code base and lots of boilerplate.
+
+
 
 ## Features
 
@@ -12,13 +14,23 @@ API changes can happen at any time in master. See the releases page to download 
 
 - Send DroneCAN messages ✅
 - Receive DroneCAN messages ✅
-- Send NodeStatus ✅
-- Respond to NodeInfo ✅
-- Reboot on reboot request ✅
-- Dynamic Node Allocation ✅
+- Standard DroneCAN under the hood (allocation, node info) ✅
 - DroneCAN Parameters ✅
 - Firmware update over CAN ✅
 
+## Code Usage
+
+
+Apart from calling usual init functions and our library update function, sending a DroneCAN message boils down to this:
+```cpp
+uavcan_equipment_power_BatteryInfo pkt{};
+pkt.voltage = analogRead(PA1);
+pkt.current = analogRead(PA0);
+
+sendUavcanMsg(dronecan.canard, pkt);
+```
+
+See [Beyond Robotix Gitbooks ArduinoCAN documentation](https://beyond-robotix.gitbook.io/docs/can-node-system/arduino-dronecan) for more information!
 
 ## Currently Supported Hardware
 
@@ -31,10 +43,6 @@ See [Beyond Robotix Can Node](https://www.beyondrobotix.com/products/micro-can-n
 <img src="./assets/node-and-carrier.png" width="80%">
 
 We've got some handy docs for the node hardware and some more software explaination and examples here [CAN node gitbook](https://beyond-robotix.gitbook.io/docs/can-node-system)
-
-## Code Usage
-
-See [Beyond Robotix Gitbooks ArduinoCAN documentation](https://beyond-robotix.gitbook.io/docs/can-node-system/arduino-dronecan) for more information!
 
 ## Support
 
