@@ -12,7 +12,7 @@ API version v1.3
 
 // set up your parameters here with default values. NODEID should be kept
 std::vector<DroneCAN::parameter> custom_parameters = {
-    { "NODEID", UAVCAN_PROTOCOL_PARAM_VALUE_INTEGER_VALUE, 69,  0, 127 },
+    { "NODEID", UAVCAN_PROTOCOL_PARAM_VALUE_INTEGER_VALUE, 100,  0, 127 },
     { "PARM_1", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
     { "PARM_2", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
     { "PARM_3", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
@@ -96,7 +96,7 @@ void setup()
     IWatchdog.begin(2000000); // if the loop takes longer than 2 seconds, reset the system
 
     // an example of getting and setting parameters within the code
-    dronecan.setParameter("PARM_1", 69);
+    dronecan.setParameter("PARM_1", 50.0f);
     Serial.print("PARM_1 value: ");
     Serial.println(dronecan.getParameter("PARM_1"));
 
