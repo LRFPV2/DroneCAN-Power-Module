@@ -1,3 +1,5 @@
+// XRC Technologies DroneCAN Power Module
+
 #include <Arduino.h>
 #include <dronecan.h>
 #include <IWatchdog.h>
@@ -5,50 +7,42 @@
 #include <vector>
 #include <simple_dronecanmessages.h>
 
-// set up your parameters here with default values. NODEID should be kept
+// Calculations:
+// 0.1mOhm resistor
+// 20k-1k voltage divider
+// Vout = Vbatt / 21
+// 12-bit ADC (4096 bit resolution)
+// INA240A2 --> 50V/V Gain
+// Voltage (ADC)= I * 0.0025 * 50 = 3.3/4096
+// Voltage (ADC) = 3.3/4096 = V_batt / 21
+// Target current: 200A
+// These are good starting numbers but actual numbers may vary
+// I_batt = 0.0064453125 * V_adc
+// V_batt = 0.0169189453125 * V_adc
+// 1 / I_batt constant = 155.151515
+// 1 / V_batt constant = 59.1053391
+
+#define SHUNT_RESISTANCE 0.0025
+#define CURRENT_SCALE_FACTOR 155.151515
+#define VOLTAGE_SCALE_FACTOR 59.1053391
+#define CURRENT_PIN PA2
+#define VOLTAGE_PIN PA3
+
+float current;
+float voltage;
+
 std::vector<DroneCAN::parameter> custom_parameters = {
-    { "NODEID", UAVCAN_PROTOCOL_PARAM_VALUE_INTEGER_VALUE, 100,  0, 127 },
-    { "PARM_1", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
-    { "PARM_2", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
-    { "PARM_3", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
-    { "PARM_4", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
-    { "PARM_5", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
-    { "PARM_6", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
-    { "PARM_7", UAVCAN_PROTOCOL_PARAM_VALUE_REAL_VALUE,   0.0f, 0.0f, 100.0f },
-};
+    {"NODEID", UAVCAN_PROTOCOL_PARAM_VALUE_INTEGER_VALUE, 127, 0, 127}};
 
 DroneCAN dronecan;
 
 uint32_t looptime = 0;
 
-/*
-This function is called when we receive a CAN message, and it's accepted by the shouldAcceptTransfer function.
-We need to do boiler plate code in here to handle parameter updates and so on, but you can also write code to interact with sent messages here.
-*/
 static void onTransferReceived(CanardInstance *ins, CanardRxTransfer *transfer)
 {
-
-    // switch on data type ID to pass to the right handler function
-    // if (transfer->transfer_type == CanardTransferTypeRequest)
-    // check if we want to handle a specific service request
-    switch (transfer->data_type_id)
-    {
-
-    case UAVCAN_EQUIPMENT_AHRS_MAGNETICFIELDSTRENGTH_ID:
-    {
-        uavcan_equipment_ahrs_MagneticFieldStrength pkt{};
-        uavcan_equipment_ahrs_MagneticFieldStrength_decode(transfer, &pkt);
-        break;
-    }
-    }
-
     DroneCANonTransferReceived(dronecan, ins, transfer);
 }
 
-/*
-For this function, we need to make sure any messages we want to receive follow the following format with
-UAVCAN_EQUIPMENT_AHRS_MAGNETICFIELDSTRENGTH_ID as an example
- */
 static bool shouldAcceptTransfer(const CanardInstance *ins,
                                  uint64_t *out_data_type_signature,
                                  uint16_t data_type_id,
@@ -56,25 +50,11 @@ static bool shouldAcceptTransfer(const CanardInstance *ins,
                                  uint8_t source_node_id)
 
 {
-    if (transfer_type == CanardTransferTypeBroadcast)
-    {
-        // Check if we want to handle a specific broadcast packet
-        switch (data_type_id)
-        {
-        case UAVCAN_EQUIPMENT_AHRS_MAGNETICFIELDSTRENGTH_ID:
-        {
-            *out_data_type_signature = UAVCAN_EQUIPMENT_AHRS_MAGNETICFIELDSTRENGTH_SIGNATURE;
-            return true;
-        }
-        }
-    }
-
     return false || DroneCANshoudlAcceptTransfer(ins, out_data_type_signature, data_type_id, transfer_type, source_node_id);
 }
 
 void setup()
-{   
-    // the following block of code should always run first. Adjust it at your own peril!
+{
     app_setup();
     IWatchdog.begin(2000000); 
     Serial.begin(115200);
@@ -84,36 +64,27 @@ void setup()
         onTransferReceived, 
         shouldAcceptTransfer, 
         custom_parameters,
-        "Beyond Robotix Node"
+        "XRC Technologies Power Module"
     );
-    // end of important starting code
-    
+    pinMode(CURRENT_PIN, INPUT);
+    pinMode(VOLTAGE_PIN, INPUT);
 
-    // an example of getting and setting parameters within the code
-    dronecan.setParameter("PARM_1", 50.0f); // set a parameter to 50.0
-    Serial.print("PARM_1 value: ");
-    Serial.println(dronecan.getParameter("PARM_1"));
-
-    // we use a while true loop instead of the arduino "loop" function since that causes issues.
     while (true)
     {
         const uint32_t now = millis();
 
         // send our battery message at 10Hz
-        // Don't use delay() since we need to call dronecan.cycle() as much as possible
         if (now - looptime > 100)
         {
             looptime = millis();
 
-            // collect MCU core temperature data
-            int32_t vref = __LL_ADC_CALC_VREFANALOG_VOLTAGE(analogRead(AVREF), LL_ADC_RESOLUTION_12B);
-            int32_t cpu_temp = __LL_ADC_CALC_TEMPERATURE(vref, analogRead(ATEMP), LL_ADC_RESOLUTION_12B);
-
             // construct dronecan packet
+            current = analogRead(CURRENT_PIN) / CURRENT_SCALE_FACTOR;
+            voltage = analogRead(VOLTAGE_PIN) / VOLTAGE_SCALE_FACTOR;
             uavcan_equipment_power_BatteryInfo pkt{};
-            pkt.voltage = analogRead(PA1);
-            pkt.current = analogRead(PA0);
-            pkt.temperature = cpu_temp;
+            pkt.voltage = voltage;
+            pkt.current = current;
+            //pkt.temperature = INA.getTemperature();
 
             sendUavcanMsg(dronecan.canard, pkt);
         }
