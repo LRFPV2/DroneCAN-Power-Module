@@ -1,6 +1,10 @@
 # XRC Technologies DroneCAN Power Module
 
-TO BE UPDATED
+INSTRUCTIONS FOR USE
+Checkout code and submodules. If sub-modules are not checked out, code will not sompile properly due to broken dependencies
+```
+git clone --recurse-submodules https://github.com/LRFPV2/DroneCAN-Power-Module.git
+```
 
 This repository allows easy integration of sensors to be used with Ardupilot and PX4 via DroneCAN. Sensors can be integrated within minutes by using pre-existing Arduino libraries for sensors, and through this library which abstracts the DroneCAN layer so you can focus on sending and receiving messages.
 
