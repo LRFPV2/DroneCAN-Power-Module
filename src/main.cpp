@@ -13,7 +13,7 @@
 // Vout = Vbatt / 21
 // 12-bit ADC (4096 bit resolution)
 // INA240A2 --> 50V/V Gain
-// Voltage (ADC)= I * 0.0025 * 50 = 3.3/4096
+// Voltage (ADC)= I * 0.0001 * 50 = 3.3/4096
 // Voltage (ADC) = 3.3/4096 = V_batt / 21
 // Target current: 200A
 // These are good starting numbers but actual numbers may vary
@@ -23,8 +23,8 @@
 // 1 / V_batt constant = 59.1053391
 
 #define SHUNT_RESISTANCE 0.0025
-#define CURRENT_SCALE_FACTOR 155.151515
-#define VOLTAGE_SCALE_FACTOR 59.1053391
+#define CURRENT_SCALE_FACTOR 1.623
+#define VOLTAGE_SCALE_FACTOR 14.705
 #define CURRENT_PIN PA2
 #define VOLTAGE_PIN PA3
 
